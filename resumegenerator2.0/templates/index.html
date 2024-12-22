@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            gap: 20px;
+        }
+
+        .form-section {
+            flex: 1;
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        .preview-section {
+            flex: 1;
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            display: none;
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        h2 {
+            color: #444;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            margin-top: 0;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        textarea {
+            height: 100px;
+            resize: vertical;
+        }
+
+        .date-range {
+            display: flex;
+            gap: 10px;
+        }
+
+        .date-range input {
+            width: 50%;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 0 10px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .add-btn {
+            background-color: #28a745;
+        }
+
+        .add-btn:hover {
+            background-color: #218838;
+        }
+
+        .preview-controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .preview-controls button {
+            flex: 1;
+            max-width: 200px;
+        }
+
+        .preview-content {
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin-top: 20px;
+            border-radius: 4px;
+        }
+
+        #pdfViewer {
+            width: 100%;
+            height: 800px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+        .view-active {
+            background-color: #0056b3 !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Form Section -->
+        <div class="form-section">
+            <h1>Resume Generator</h1>
+            <form id="resumeForm">
+                <div class="section">
+                    <h2>Contact Information</h2>
+                    <input type="text" id="fullName" placeholder="Full Name" required>
+                    <input type="email" id="email" placeholder="Email" required>
+                    <input type="tel" id="phone" placeholder="Phone">
+                    <input type="text" id="location" placeholder="Location">
+                </div>
+
+                <div class="section" id="experienceSection">
+                    <h2>Experience</h2>
+                    <div class="experience-entry">
+                        <input type="text" placeholder="Company Name" class="company-name" required>
+                        <input type="text" placeholder="Job Title" class="job-title" required>
+                        <div class="date-range">
+                            <input type="text" placeholder="Start Date" class="start-date" required>
+                            <input type="text" placeholder="End Date" class="end-date" required>
+                        </div>
+                        <textarea placeholder="Responsibilities and achievements" class="responsibilities" required></textarea>
+                    </div>
+                    <button type="button" id="addExperience" class="add-btn">Add More Experience</button>
+                </div>
+
+                <div class="section">
+                    <h2>Education</h2>
+                    <input type="text" id="university" placeholder="University/Institution" required>
+                    <input type="text" id="degree" placeholder="Degree" required>
+                    <input type="text" id="gradYear" placeholder="Graduation Year" required>
+                    <input type="text" id="gpa" placeholder="GPA (optional)">
+                </div>
+
+                <div class="section">
+                    <h2>Skills</h2>
+                    <textarea id="skills" placeholder="Enter your skills (separated by commas)" required></textarea>
+                </div>
+
+                <div style="text-align: center;">
+                    <button type="submit">Generate Resume</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Preview Section -->
+        <div class="preview-section" id="previewSection">
+            <h2>Resume Preview</h2>
+            <div class="preview-controls">
+                <button onclick="switchView('text')" class="view-active">Text View</button>
+                <button onclick="switchView('pdf')">PDF View</button>
+            </div>
+            
+            <div id="textView" class="preview-content"></div>
+            <div id="pdfView" style="display: none;">
+                <iframe id="pdfViewer"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('resumeForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = {
+                contact_info: {
+                    name: document.getElementById('fullName').value,
+                    email: document.getElementById('email').value,
+                    phone: document.getElementById('phone').value,
+                    location: document.getElementById('location').value
+                },
+                experience: Array.from(document.getElementsByClassName('experience-entry')).map(entry => ({
+                    company: entry.querySelector('.company-name').value,
+                    title: entry.querySelector('.job-title').value,
+                    startDate: entry.querySelector('.start-date').value,
+                    endDate: entry.querySelector('.end-date').value,
+                    responsibilities: entry.querySelector('.responsibilities').value
+                })),
+                education: {
+                    university: document.getElementById('university').value,
+                    degree: document.getElementById('degree').value,
+                    gradYear: document.getElementById('gradYear').value,
+                    gpa: document.getElementById('gpa').value
+                },
+                skills: document.getElementById('skills').value.split(',').map(skill => skill.trim())
+            };
+
+            try {
+                const response = await fetch('/generate_resume', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+                if (data.status === 'success') {
+                    document.getElementById('textView').innerHTML = data.resume;
+                    document.getElementById('previewSection').style.display = 'block';
+                    
+                    // Load PDF view
+                    const pdfResponse = await fetch('/view_pdf', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ resume: data.resume })
+                    });
+                    
+                    const pdfBlob = await pdfResponse.blob();
+                    const pdfUrl = URL.createObjectURL(pdfBlob);
+                    document.getElementById('pdfViewer').src = pdfUrl;
+                } else {
+                    alert('Error generating resume: ' + data.error);
+                }
+            } catch (error) {
+                alert('Error: ' + error);
+            }
+        });
+
+        document.getElementById('addExperience').addEventListener('click', () => {
+            const template = document.querySelector('.experience-entry').cloneNode(true);
+            template.querySelectorAll('input, textarea').forEach(input => input.value = '');
+            document.getElementById('experienceSection').insertBefore(template, document.getElementById('addExperience'));
+        });
+
+        function switchView(view) {
+            const textView = document.getElementById('textView');
+            const pdfView = document.getElementById('pdfView');
+            const buttons = document.querySelectorAll('.preview-controls button');
+            
+            if (view === 'text') {
+                textView.style.display = 'block';
+                pdfView.style.display = 'none';
+                buttons[0].classList.add('view-active');
+                buttons[1].classList.remove('view-active');
+            } else {
+                textView.style.display = 'none';
+                pdfView.style.display = 'block';
+                buttons[0].classList.remove('view-active');
+                buttons[1].classList.add('view-active');
+            }
+        }
+    </script>
+</body>
+</html>
